@@ -23,6 +23,7 @@
     "@opendocsg/pdf2md": "^0.1.28",
     "commander": "^11.1.0",
     "dotenv": "^16.4.1",
+    "ollama": "^0.4.6",
     "openai": "^4.26.0"
   },
   "devDependencies": {

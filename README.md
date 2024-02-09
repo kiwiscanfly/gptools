@@ -16,6 +16,7 @@ OPENAI_API_KEY="<your api key>"
 OPENAI_MAX_TOKENS=2000
 OPENAI_MODEL="gpt-4-turbo-preview"
 GPTOOLS_PROMPTS_DIR="~/prompts"
+OLLAMA_MODEL="llama2"
 ```
 4. Create a directory called prompts
 5. Create markdown files in this directory for each command. The filename will be the name of the command. Use the placeholder `<!-- INPUT -->` to denote where to put the command input. The following is a simplistic example:
@@ -32,6 +33,8 @@ Summarise the following text:
 
 - `gptools wisdom --pdf complex-paper.pdf`: This will execute the `wisdom.md` prompt with the contents of the PDF file.
 - `cat essay.md | gptools summarise`: This will execute the `summarise.md` prompt with the contents of `essay.md`.
+- `git diff | gptools diff`
+- `git diff <branch1>..<branch2> | gptools diff`
 - `cat codefile.js | gptools code-review`: This will execute the `code-review.md` prompt with the contents of `codefile.js`.
 - `find . -path ./node_modules -prune -false -o -name "*.js" -exec sh -c 'echo "File: $1"; cat "$1"; echo ""' sh {} \; | gptools code-review`: This will combine all the javascript files in the current directory and send them over to ChatGPT for a code review using the prompt defined in `code-review.md`.
 

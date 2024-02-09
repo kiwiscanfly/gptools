@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const pdf2md = require('@opendocsg/pdf2md')
+const pdf2md = require('@opendocsg/pdf2md');
 const { program } = require('commander');
-const { processTemplate } = require('./src/openai');
+const { processTemplate: openAiProcessTemplate } = require('./src/openai');
+const { processTemplate: ollamaProcessTemplate } = require('./src/ollama');
 const { expandHomeDir, loadConfig } = require('./src/config');
 
 loadConfig();
@@ -18,7 +19,11 @@ const processInputOrPDF = (command, options) => {
     const pdfBuffer = fs.readFileSync(filePath);
     pdf2md(pdfBuffer)
       .then((pdfContent) => {
-        processTemplate(command, pdfContent);
+        if (options.ollama) {
+          ollamaProcessTemplate(command, pdfContent);
+          return;
+        }
+        openAiProcessTemplate(command, pdfContent);
       })
       .catch((error) => {
         console.error(error);
@@ -33,7 +38,11 @@ const processInputOrPDF = (command, options) => {
     inputData += data;
   });
   process.stdin.on('end', () => {
-    processTemplate(command, inputData);
+    if (options.ollama) {
+      ollamaProcessTemplate(command, inputData);
+      return;
+    }
+    openAiProcessTemplate(command, inputData);
   });
 };
 
@@ -47,6 +56,7 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
     .command(commandName)
     .description(`Runs the provided text against ${file}`)
     .option('--pdf <file>', `Pass a PDF file to run ${file} against`)
+    .option('--ollama', 'Use Ollama instead of OpenAI')
     .action((options) => processInputOrPDF(commandName, options));
 });
 

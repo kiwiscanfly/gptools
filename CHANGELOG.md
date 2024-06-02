@@ -1,8 +1,14 @@
 # Changelog
 
-## Upcoming (v1.1.0)
+## Upcoming (v2.0.0)
 
 ### Features
+
+- Deploy command
+
+## Upcoming (v1.1.0)
+
+### Maintenance
 
 - Support additional engines
 - Support additional settings

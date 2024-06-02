@@ -2,7 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { expandHomeDir } = require('./config');
+const yaml = require('js-yaml');
+const { expandHomeDir, getSettingsByTemplate } = require('./config');
 const { callAIEngine } = require('./engines');
 
 const getTemplate = (templateName) => {
@@ -16,11 +17,8 @@ const getTemplate = (templateName) => {
   }
 };
 
-const preprocessTemplate = async (destinationTemplate, inputString, engineConfig) => {
-  // Regular expression to match the pattern
+const processPromptTags = async (destinationTemplate, inputString, engineConfig) => {
   const regex = /<!-- \.\/([a-zA-Z0-9_-]+) -->/g;
-
-  // Finding matches
   const matches = [...destinationTemplate.matchAll(regex)];
 
   const replacements = await Promise.all(matches.map(async (match) => {
@@ -34,26 +32,41 @@ const preprocessTemplate = async (destinationTemplate, inputString, engineConfig
       inputString,
       engineConfig,
     );
-    const aiResult = await callAIEngine(appliedTemplate, engineConfig);
-    return { fullMatch, aiResult };
+    return { fullMatch, appliedTemplate };
   }));
 
   let templateOutput = destinationTemplate;
-  replacements.forEach(({ fullMatch, aiResult }) => {
-    templateOutput = templateOutput.replace(fullMatch, aiResult);
+  replacements.forEach(({ fullMatch, appliedTemplate }) => {
+    templateOutput = templateOutput.replace(fullMatch, appliedTemplate);
   });
 
-  return templateOutput;
+  return templateOutput.replace('<!-- INPUT -->', inputString);
 };
+
+function extractYAML(input) {
+  const regex = /```([^`]+)```/;
+  const match = input.match(regex);
+  return match ? match[1].trim() : null;
+}
+
+function extractTextOutsideBackticks(input) {
+  const regex = /```.*?```/gs;
+  const output = input.replace(regex, '').trim();
+  return output;
+}
 
 module.exports.getTemplate = getTemplate;
 
-const applyTemplate = async (templateName, inputString, engineConfig) => {
+const applyTemplate = async (templateName, inputString, options) => {
   const template = getTemplate(templateName);
   if (!template) {
-    return null;
+    throw new Error(`Template not found: ${templateName}`);
   }
-  const processed = await preprocessTemplate(template, inputString, engineConfig);
-  return processed.replace('<!-- INPUT -->', inputString);
+  const yamlStr = extractYAML(template);
+  const templateSettings = yaml.load(yamlStr);
+  const promptText = extractTextOutsideBackticks(template);
+
+  const processed = await processPromptTags(promptText, inputString, options);
+  return callAIEngine(processed, getSettingsByTemplate(templateSettings, options));
 };
 module.exports.applyTemplate = applyTemplate;

@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const pdf2md = require('@opendocsg/pdf2md');
 const { program } = require('commander');
-const { callAIEngine } = require('./src/engines');
 const { applyTemplate } = require('./src/template');
 const { expandHomeDir, loadConfig } = require('./src/config');
 
@@ -37,19 +36,14 @@ const getInputFromPdf = async (pdfOption) => {
 };
 
 const execute = async (command, options) => {
-  const engineConfig = {
-    engine: options.ollama ? 'ollama' : 'openai',
-  };
-
   const inputData = options.pdf
     ? await getInputFromPdf(options.pdf)
     : await getInputFromStdin();
-  const processed = await applyTemplate(
+  return applyTemplate(
     command,
     inputData,
-    engineConfig,
+    options,
   );
-  return callAIEngine(processed, engineConfig);
 };
 
 program
@@ -62,15 +56,10 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
     .command(commandName)
     .description(`Runs the provided text against ${file}`)
     .option('--pdf <file>', `Pass a PDF file to run ${file} against`)
-    .option('--ollama', 'Use Ollama instead of OpenAI')
+    .option('--engine', 'AI engine to use (ollama or openai)')
     .action(
       (options) => execute(commandName, options)
         .then((result) => {
-          console.log(`
--------
-RESULT:
--------
-`);
           console.log(result);
           process.exit(0);
         })

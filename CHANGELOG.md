@@ -5,6 +5,8 @@
 ### Features
 
 - Support additional engines
+- Support tools
+- Support additional settings
 
 ## Pending (v1.0.0)
 
@@ -17,3 +19,4 @@
 ### Maintenance
 
 - Use async correctly
+- Update documentation

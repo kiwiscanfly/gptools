@@ -5,11 +5,11 @@ const getConfig = () => new OpenAI({
 });
 module.exports.getConfig = getConfig;
 
-module.exports.callEngine = async (content) => {
+module.exports.callEngine = async (content, engineConfig) => {
   const openai = getConfig();
 
   const response = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL,
+    model: engineConfig.model,
     messages: [
       { role: 'system', content },
     ],

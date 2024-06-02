@@ -3,47 +3,53 @@ const fs = require('fs');
 const path = require('path');
 const pdf2md = require('@opendocsg/pdf2md');
 const { program } = require('commander');
-const { processTemplate: openAiProcessTemplate } = require('./src/openai');
-const { processTemplate: ollamaProcessTemplate } = require('./src/ollama');
+const { callAIEngine } = require('./src/engines');
+const { applyTemplate } = require('./src/template');
 const { expandHomeDir, loadConfig } = require('./src/config');
 
 loadConfig();
 
-const processInputOrPDF = (command, options) => {
-  if (options.pdf) {
-    const filePath = path.resolve(options.pdf);
-    if (!fs.statSync(filePath).isFile()) {
-      console.error(`${filePath} is not a file`);
-      process.exit(1);
-    }
-    const pdfBuffer = fs.readFileSync(filePath);
-    pdf2md(pdfBuffer)
-      .then((pdfContent) => {
-        if (options.ollama) {
-          ollamaProcessTemplate(command, pdfContent);
-          return;
-        }
-        openAiProcessTemplate(command, pdfContent);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    return;
-  }
-
-  // Get input from stdin
+const getInputFromStdin = new Promise((resolve, reject) => {
   let inputData = '';
   process.stdin.resume();
+
   process.stdin.on('data', (data) => {
     inputData += data;
   });
+
   process.stdin.on('end', () => {
-    if (options.ollama) {
-      ollamaProcessTemplate(command, inputData);
-      return;
-    }
-    openAiProcessTemplate(command, inputData);
+    resolve(inputData);
   });
+
+  process.stdin.on('error', (err) => {
+    reject(err);
+  });
+});
+
+const getInputFromPdf = async (pdfOption) => {
+  const filePath = path.resolve(pdfOption);
+  if (!fs.statSync(filePath).isFile()) {
+    console.error(`${filePath} is not a file`);
+    process.exit(1);
+  }
+  const pdfBuffer = fs.readFileSync(filePath);
+  return pdf2md(pdfBuffer);
+};
+
+const execute = async (command, options) => {
+  const engineConfig = {
+    engine: options.ollama ? 'ollama' : 'openai',
+  };
+
+  const inputData = options.pdf
+    ? await getInputFromStdin()
+    : await getInputFromPdf(options.pdf);
+  const processed = await applyTemplate(
+    command,
+    inputData,
+    engineConfig,
+  );
+  return callAIEngine(processed, engineConfig);
 };
 
 program
@@ -57,7 +63,17 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
     .description(`Runs the provided text against ${file}`)
     .option('--pdf <file>', `Pass a PDF file to run ${file} against`)
     .option('--ollama', 'Use Ollama instead of OpenAI')
-    .action((options) => processInputOrPDF(commandName, options));
+    .action(
+      (options) => execute(commandName, options)
+        .then((result) => {
+          console.log(result);
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error(err);
+          process.exit(1);
+        }),
+    );
 });
 
 program.parse(process.argv);

@@ -3,10 +3,12 @@ module.exports.callEngine = async (content) => {
   const { Ollama } = ollamaModule;
   const ollama = new Ollama();
 
-  return ollama.chat({
+  const response = await ollama.chat({
     model: process.env.OLLAMA_MODEL,
     messages: [
       { role: 'system', content },
     ],
   });
+
+  return response.message.content;
 };

@@ -11,6 +11,7 @@
 ### Features
 
 - Support nested prompt templates
+- Support jekyll style settings for the prompt templates
 - Create a cli arguments / prompt template settings / `.gptools` heirachy
 
 ### Maintenance

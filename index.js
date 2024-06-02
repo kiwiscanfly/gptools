@@ -9,7 +9,7 @@ const { expandHomeDir, loadConfig } = require('./src/config');
 
 loadConfig();
 
-const getInputFromStdin = new Promise((resolve, reject) => {
+const getInputFromStdin = () => new Promise((resolve, reject) => {
   let inputData = '';
   process.stdin.resume();
 
@@ -42,8 +42,8 @@ const execute = async (command, options) => {
   };
 
   const inputData = options.pdf
-    ? await getInputFromStdin()
-    : await getInputFromPdf(options.pdf);
+    ? await getInputFromPdf(options.pdf)
+    : await getInputFromStdin();
   const processed = await applyTemplate(
     command,
     inputData,
@@ -66,6 +66,11 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
     .action(
       (options) => execute(commandName, options)
         .then((result) => {
+          console.log(`
+-------
+RESULT:
+-------
+`);
           console.log(result);
           process.exit(0);
         })

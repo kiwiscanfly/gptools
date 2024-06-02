@@ -1,5 +1,5 @@
-const { callAIEngine: callOpenAI } = require('./openai');
-const { callAIEngine: callOllama } = require('./ollama');
+const { callEngine: callOpenAI } = require('./openai');
+const { callEngine: callOllama } = require('./ollama');
 
 module.exports.callAIEngine = async (content, engineConfig) => {
   if (engineConfig.engine === 'ollama') {

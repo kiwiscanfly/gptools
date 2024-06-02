@@ -18,25 +18,30 @@ const getTemplate = (templateName) => {
 
 const preprocessTemplate = async (destinationTemplate, inputString, engineConfig) => {
   // Regular expression to match the pattern
-  const regex = /<!-- \.\/([a-zA-Z0-9_\-]+) -->/g;
+  const regex = /<!-- \.\/([a-zA-Z0-9_-]+) -->/g;
 
   // Finding matches
-  const matches = [...inputString.matchAll(regex)];
+  const matches = [...destinationTemplate.matchAll(regex)];
 
-  // Clone the string
-  let templateOutput = destinationTemplate;
-
-  // Output the results
-  await Promise.all(matches.map(async (match) => {
+  const replacements = await Promise.all(matches.map(async (match) => {
     const [fullMatch, templateName] = match;
     const template = getTemplate(templateName);
     if (!template) {
-      return;
+      return null;
     }
-    const appliedTemplate = await applyTemplate(template, inputString, engineConfig);
-    const templateResult = callAIEngine(appliedTemplate, engineConfig);
-    templateOutput = templateOutput.replace(fullMatch, templateResult);
+    const appliedTemplate = await applyTemplate(
+      templateName,
+      inputString,
+      engineConfig,
+    );
+    const aiResult = await callAIEngine(appliedTemplate, engineConfig);
+    return { fullMatch, aiResult };
   }));
+
+  let templateOutput = destinationTemplate;
+  replacements.forEach(({ fullMatch, aiResult }) => {
+    templateOutput = templateOutput.replace(fullMatch, aiResult);
+  });
 
   return templateOutput;
 };
@@ -48,6 +53,7 @@ const applyTemplate = async (templateName, inputString, engineConfig) => {
   if (!template) {
     return null;
   }
-  return template.replace('<!-- INPUT -->', await preprocessTemplate(template, inputString, engineConfig));
+  const processed = await preprocessTemplate(template, inputString, engineConfig);
+  return processed.replace('<!-- INPUT -->', inputString);
 };
 module.exports.applyTemplate = applyTemplate;

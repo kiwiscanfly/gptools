@@ -1,6 +1,6 @@
 # gptools
 
-`gptools` is a simple command line utility for executing your ChatGPT or Ollama prompts. By accepting input through the standard input, it provides the ability to chain your prompts, by using advanced templating techniques it also allow you to nest prompts within one-another. The command also provides the ability to accept PDFs and YouTube links through the `--inout` option. By storing the prompts in a user definable directory it provides the ability to create, gather and experiment on your own collection of prompts which you can store in your own git repository and use in other projects.
+`gptools` is a simple command line utility for executing your ChatGPT or Ollama prompts. By accepting input through the standard input, it provides the ability to chain your prompts, by using advanced templating techniques it also allow you to nest prompts within one-another. The command also provides the ability to accept PDFs and YouTube links through the `--input` option. By storing the prompts in a user definable directory it provides the ability to create, gather and experiment on your own collection of prompts which you can store in your own git repository and use in other projects.
 
 For instuctions on how to use plese visit [this blog post](https://labs.bex.codes/development/gptools-ai-command-line-tool.html).
 

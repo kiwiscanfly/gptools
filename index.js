@@ -1,49 +1,22 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const pdf2md = require('@opendocsg/pdf2md');
 const { program } = require('commander');
-const { processTemplate: openAiProcessTemplate } = require('./src/openai');
-const { processTemplate: ollamaProcessTemplate } = require('./src/ollama');
+const { applyTemplate } = require('./src/template');
 const { expandHomeDir, loadConfig } = require('./src/config');
+const { getInputFromStdin, getInputFromPathOrUrl } = require('./src/input');
 
 loadConfig();
 
-const processInputOrPDF = (command, options) => {
-  if (options.pdf) {
-    const filePath = path.resolve(options.pdf);
-    if (!fs.statSync(filePath).isFile()) {
-      console.error(`${filePath} is not a file`);
-      process.exit(1);
-    }
-    const pdfBuffer = fs.readFileSync(filePath);
-    pdf2md(pdfBuffer)
-      .then((pdfContent) => {
-        if (options.ollama) {
-          ollamaProcessTemplate(command, pdfContent);
-          return;
-        }
-        openAiProcessTemplate(command, pdfContent);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    return;
-  }
-
-  // Get input from stdin
-  let inputData = '';
-  process.stdin.resume();
-  process.stdin.on('data', (data) => {
-    inputData += data;
-  });
-  process.stdin.on('end', () => {
-    if (options.ollama) {
-      ollamaProcessTemplate(command, inputData);
-      return;
-    }
-    openAiProcessTemplate(command, inputData);
-  });
+const execute = async (command, options) => {
+  const inputData = options.input
+    ? await getInputFromPathOrUrl(options.input)
+    : await getInputFromStdin();
+  return applyTemplate(
+    command,
+    inputData,
+    options,
+  );
 };
 
 program
@@ -55,9 +28,20 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
   program
     .command(commandName)
     .description(`Runs the provided text against ${file}`)
-    .option('--pdf <file>', `Pass a PDF file to run ${file} against`)
-    .option('--ollama', 'Use Ollama instead of OpenAI')
-    .action((options) => processInputOrPDF(commandName, options));
+    .option('--input <pathOrUrl>', 'Path to the document file or URL to accept instead of receiving from stdin')
+    .option('--engine <value>', 'AI engine to use if not specified by the file (ollama or openai)')
+    .option('--model <value>', 'AI engine to use if not specified by the file (i.e. gpt-3.5-turbo)')
+    .action(
+      (options) => execute(commandName, options)
+        .then((result) => {
+          console.log(result);
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error(err);
+          process.exit(1);
+        }),
+    );
 });
 
 program.parse(process.argv);

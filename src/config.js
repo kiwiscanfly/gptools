@@ -41,3 +41,18 @@ module.exports.loadConfig = () => {
     process.exit(1);
   }
 };
+
+const getModelBasedOnGengine = (engine) => {
+  if (process.env[`${engine.toUpperCase()}_MODEL`]) {
+    return process.env[`${engine.toUpperCase()}_MODEL`];
+  }
+  return process.env.MODEL;
+};
+
+module.exports.getSettingsByTemplate = (templateSettings, options) => {
+  const engine = options.engine || templateSettings.engine || process.env.ENGINE;
+  return {
+    engine,
+    model: options.model || templateSettings.model || getModelBasedOnGengine(engine),
+  };
+};

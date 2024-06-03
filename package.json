@@ -21,11 +21,13 @@
   "homepage": "https://github.com/kiwiscanfly/gptools#readme",
   "dependencies": {
     "@opendocsg/pdf2md": "^0.1.28",
+    "axios": "^1.7.2",
     "commander": "^11.1.0",
     "dotenv": "^16.4.1",
     "js-yaml": "^4.1.0",
     "ollama": "^0.4.6",
-    "openai": "^4.26.0"
+    "openai": "^4.26.0",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "eslint": "^8.56.0",

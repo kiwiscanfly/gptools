@@ -1,43 +1,16 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const pdf2md = require('@opendocsg/pdf2md');
 const { program } = require('commander');
 const { applyTemplate } = require('./src/template');
 const { expandHomeDir, loadConfig } = require('./src/config');
+const { getInputFromStdin, getInputFromPathOrUrl } = require('./src/input');
 
 loadConfig();
 
-const getInputFromStdin = () => new Promise((resolve, reject) => {
-  let inputData = '';
-  process.stdin.resume();
-
-  process.stdin.on('data', (data) => {
-    inputData += data;
-  });
-
-  process.stdin.on('end', () => {
-    resolve(inputData);
-  });
-
-  process.stdin.on('error', (err) => {
-    reject(err);
-  });
-});
-
-const getInputFromPdf = async (pdfOption) => {
-  const filePath = path.resolve(pdfOption);
-  if (!fs.statSync(filePath).isFile()) {
-    console.error(`${filePath} is not a file`);
-    process.exit(1);
-  }
-  const pdfBuffer = fs.readFileSync(filePath);
-  return pdf2md(pdfBuffer);
-};
-
 const execute = async (command, options) => {
-  const inputData = options.pdf
-    ? await getInputFromPdf(options.pdf)
+  const inputData = options.input
+    ? await getInputFromPathOrUrl(options.input)
     : await getInputFromStdin();
   return applyTemplate(
     command,
@@ -55,8 +28,9 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
   program
     .command(commandName)
     .description(`Runs the provided text against ${file}`)
-    .option('--pdf <file>', `Pass a PDF file to run ${file} against`)
-    .option('--engine', 'AI engine to use (ollama or openai)')
+    .option('--input <pathOrUrl>', 'Path to the document file or URL to accept instead of receiving from stdin')
+    .option('--engine <value>', 'AI engine to use if not specified by the file (ollama or openai)')
+    .option('--model <value>', 'AI engine to use if not specified by the file (i.e. gpt-3.5-turbo)')
     .action(
       (options) => execute(commandName, options)
         .then((result) => {

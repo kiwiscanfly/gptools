@@ -12,64 +12,111 @@ const getTemplate = (templateName) => {
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     return templateContent;
   } catch (error) {
-    console.error(`Error reading template: ${templateName}`, error);
-    return null;
+    throw new Error(`Error reading template: ${templateName}`, error);
   }
 };
 
-const processItem = async (item, inputString, engineConfig) => {
-  let result = 'ERROR';
+const processItem = async (args) => {
+  const {
+    item,
+    inputString,
+    options,
+    preprocessed,
+  } = args;
 
-  // TODO: Implement pipes
-
-  // TODO: Implement tools
-
-  if (item.startsWith('@')) {
-    const template = getTemplate(item);
-    if (!template) {
-      return null;
-    }
-    result = await applyTemplate(
-      item,
-      inputString,
-      engineConfig,
-    );
+  const foundPreprocessed = preprocessed
+    ? preprocessed.find((preprocessedItem) => preprocessedItem.key === item)
+    : undefined;
+  if (foundPreprocessed) {
+    return foundPreprocessed.value;
   }
-  return result;
+
+  const template = getTemplate(item);
+  if (!template) {
+    throw new Error(`Template not found: ${item}`);
+  }
+
+  return applyTemplate(
+    item,
+    inputString,
+    options,
+  );
+};
+
+const processPipes = async (args) => {
+  const {
+    pipes,
+    inputString,
+    options,
+    preprocessed,
+  } = args;
+  const items = pipes.split('|').map((item) => item.trim());
+  const item = items.shift();
+  const result = await processItem({
+    item,
+    inputString,
+    options,
+    preprocessed,
+  });
+
+  if (!items.length) {
+    return result;
+  }
+
+  return processPipes({
+    pipes: items.join('|'),
+    inputString: result,
+    options,
+    preprocessed,
+  });
 };
 
 const processPromptTags = async (args) => {
   const {
-    destinationTemplate,
+    promptText,
     inputString,
-    engineConfig,
+    options,
     preprocessed,
   } = args;
 
-  const regex = /<!-- ([a-zA-Z0-9_-]+) -->/g;
-  const matches = [...destinationTemplate.matchAll(regex)];
+  const regex = /<!-- ([a-zA-Z0-9_-|]+) -->/g;
+  const matches = [...promptText.matchAll(regex)];
 
   const replacements = await Promise.all(matches.map(async (match) => {
     const [fullMatch, templateName] = match;
-    if (preprocessed[templateName]) {
-      return { fullMatch, result: preprocessed[templateName] };
+
+    if (templateName.toUpperCase() === 'INPUT') {
+      return {
+        fullMatch,
+        result: inputString,
+      };
     }
 
     return {
       fullMatch,
-      result: await processItem(templateName, inputString, engineConfig) 
+      result: await processPipes({
+        pipes: templateName,
+        inputString,
+        options,
+        preprocessed,
+      }),
     };
   }));
 
-  let templateOutput = destinationTemplate;
-  replacements.forEach(({ fullMatch, appliedTemplate }) => {
-    templateOutput = templateOutput.replace(fullMatch, appliedTemplate);
+  let templateOutput = promptText;
+  replacements.forEach(({ fullMatch, result }) => {
+    templateOutput = templateOutput.replace(fullMatch, result);
   });
 
-  return templateOutput.replace('<!-- INPUT -->', inputString);
+  return templateOutput;
 };
 
-const preprocess = (items) => Promise.all(items.map((item) => processItem(item.value)));
+const preprocess = (items, inputString, options) => Promise.all(
+  Object.keys(items).map(async (key) => ({
+    key,
+    value: await processPipes({ pipes: items[key], inputString, options }),
+  })),
+);
 
 function extractYAML(input) {
   const regex = /```([^`]+)```/;
@@ -91,13 +138,13 @@ const applyTemplate = async (templateName, inputString, options) => {
     throw new Error(`Template not found: ${templateName}`);
   }
   const yamlStr = extractYAML(template);
-  const templateSettings = yaml.load(yamlStr);
+  const templateSettings = yamlStr && yaml.load(yamlStr);
   const promptText = extractTextOutsideBackticks(template);
 
   // Process items in the preprocess section
-  const preprocessed = templateSettings.preprocess
-    ? await preprocess(templateSettings.preprocess)
-    : {};
+  const preprocessed = templateSettings && templateSettings.preprocess
+    ? await preprocess(templateSettings.preprocess, inputString, options)
+    : undefined;
 
   const processed = await processPromptTags({
     promptText,
@@ -105,6 +152,9 @@ const applyTemplate = async (templateName, inputString, options) => {
     options,
     preprocessed,
   });
-  return callAIEngine(processed, getSettingsByTemplate(templateSettings, options));
+  return callAIEngine(
+    processed,
+    getSettingsByTemplate(templateSettings || {}, options),
+  );
 };
 module.exports.applyTemplate = applyTemplate;

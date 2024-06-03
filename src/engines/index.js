@@ -5,5 +5,8 @@ module.exports.callAIEngine = async (content, engineConfig) => {
   if (engineConfig.engine === 'ollama') {
     return callOllama(content, engineConfig);
   }
-  return callOpenAI(content, engineConfig);
+  if (engineConfig.engine === 'openai') {
+    return callOpenAI(content, engineConfig);
+  }
+  return content;
 };

@@ -1,6 +1,6 @@
 # gptools
 
-`gptools` is a simple command line utility for executing your ChatGPT or Ollama prompts. By accepting input through the standard input, it provides the ability to chain your prompts. The command also provides the ability to accept PDFs through the `--pdf` option. By storing the prompts in a user definable directory it provides the ability to create, gather and experiment on your own collection of prompts which you can store in your own repository and use in other projects.
+`gptools` is a simple command line utility for executing your ChatGPT or Ollama prompts. By accepting input through the standard input, it provides the ability to chain your prompts, by using advanced templating techniques it also allow you to nest prompts within one-another. The command also provides the ability to accept PDFs and YouTube links through the `--inout` option. By storing the prompts in a user definable directory it provides the ability to create, gather and experiment on your own collection of prompts which you can store in your own git repository and use in other projects.
 
 For instuctions on how to use plese visit [this blog post](https://labs.bex.codes/development/gptools-ai-command-line-tool.html).
 
@@ -10,6 +10,7 @@ For instuctions on how to use plese visit [this blog post](https://labs.bex.code
 2. Install globally using NPM `npm install -g`
 3. Create a plain-text config file named `.gptools` in your home directory, it should contain the following settings (adjust to your requirements):
 ```
+ENGINE: 'openai'
 OPENAI_API_KEY="<your api key>"
 OPENAI_MAX_TOKENS=2000
 OPENAI_MODEL="gpt-4-turbo-preview"
@@ -34,7 +35,31 @@ Summarise the following text:
 - `git diff | gptools diff`
 - `git diff <branch1>..<branch2> | gptools diff`
 - `cat codefile.js | gptools code-review`: This will execute the `code-review.md` prompt with the contents of `codefile.js`.
-- `find . -path ./node_modules -prune -false -o -name "*.js" -exec sh -c 'echo "File: $1"; cat "$1"; echo ""' sh {} \; | gptools code-review`: This will combine all the javascript files in the current directory and send them over to ChatGPT for a code review using the prompt defined in `code-review.md`.
+- `find . -path ./node_modules -prune -false -o -name "*.js" -exec sh -c 'echo "File: $1"; cat "$1"; echo ""' sh {} \; | gptools code-review`: This will combine all the javascript files in the current directory and send them over to your large language model for a code review using the prompt defined in `code-review.md`.
+
+## Advanced Templating
+
+```
+\`\`\`
+engine: none
+preprocess:
+  summary: summarise
+\`\`\`
+# Social media posts
+
+## Twitter
+
+<!-- summary|twitter -->
+
+## Facebook
+
+<!-- summary|facebook -->
+
+## LinkedIn
+
+<!-- summary|linkedin -->
+
+```
 
 ---
 

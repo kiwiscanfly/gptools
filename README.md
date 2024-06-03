@@ -39,12 +39,12 @@ Summarise the following text:
 
 ## Advanced Templating
 
+````
 ```
-\`\`\`
 engine: none
 preprocess:
   summary: summarise
-\`\`\`
+```
 # Social media posts
 
 ## Twitter
@@ -59,7 +59,7 @@ preprocess:
 
 <!-- summary|linkedin -->
 
-```
+````
 
 ---
 

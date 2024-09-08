@@ -1,0 +1,8 @@
+src/
+node_modules/
+.DS_Store
+.eslintrc.json
+.gitignore
+.nvmrc
+CHANGELOG.md
+tsconfig.json

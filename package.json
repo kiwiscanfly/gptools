@@ -2,12 +2,14 @@
   "name": "gptools",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build": "tsc",
+    "watch": "tsc-watch"
   },
   "bin": {
-    "gptools": "./index.js"
+    "gptools": "./dist/cli.js"
   },
   "repository": {
     "type": "git",
@@ -24,13 +26,16 @@
     "axios": "^1.7.2",
     "commander": "^11.1.0",
     "dotenv": "^16.4.1",
-    "js-yaml": "^4.1.0",
     "ollama": "^0.4.6",
     "openai": "^4.26.0",
+    "yaml": "^2.5.1",
     "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
+    "@types/node": "^22.5.4",
     "eslint": "^8.56.0",
-    "eslint-config-airbnb": "^19.0.4"
+    "eslint-config-airbnb": "^19.0.4",
+    "tsc-watch": "^6.2.0",
+    "typescript": "^5.5.4"
   }
 }

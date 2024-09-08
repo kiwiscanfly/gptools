@@ -1,18 +1,17 @@
-const fs = require('fs');
-const dotenv = require('dotenv');
-const os = require('os');
-const path = require('path');
+import fs from 'fs';
+import dotenv from 'dotenv';
+import os from 'os';
+import path from 'path';
 
-const expandHomeDir = (filePath) => {
+export function expandHomeDir(filePath: string): string {
   if (!filePath.startsWith('~')) {
     return filePath;
   }
   const homeDir = os.homedir();
   return path.join(homeDir, filePath.slice(1));
 };
-module.exports.expandHomeDir = expandHomeDir;
 
-module.exports.loadConfig = () => {
+export function loadConfig(): void {
   const envPath = expandHomeDir('~/.gptools');
 
   if (!fs.statSync(envPath).isFile()) {
@@ -36,23 +35,15 @@ module.exports.loadConfig = () => {
     }
   });
 
-  if (!fs.statSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).isDirectory()) {
-    console.error(`${expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)} is not a directory`);
+  if (!fs.statSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR!)).isDirectory()) {
+    console.error(`${expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR!)} is not a directory`);
     process.exit(1);
   }
 };
 
-const getModelBasedOnGengine = (engine) => {
+export function getModelBasedOnGengine(engine: string): string | undefined {
   if (process.env[`${engine.toUpperCase()}_MODEL`]) {
     return process.env[`${engine.toUpperCase()}_MODEL`];
   }
   return process.env.MODEL;
-};
-
-module.exports.getSettingsByTemplate = (templateSettings, options) => {
-  const engine = options.engine || templateSettings.engine || process.env.ENGINE;
-  return {
-    engine,
-    model: options.model || templateSettings.model || getModelBasedOnGengine(engine),
-  };
 };

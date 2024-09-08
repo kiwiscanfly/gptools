@@ -1,29 +1,26 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const { program } = require('commander');
-const { applyTemplate } = require('./src/template');
-const { expandHomeDir, loadConfig } = require('./src/config');
-const { getInputFromStdin, getInputFromPathOrUrl } = require('./src/input');
+import fs from 'fs';
+import path from 'path';
+import { program } from 'commander';
+import { applyTemplate } from './apply-template.js';
+import type { InputOptions } from './apply-template.js';
+import { expandHomeDir, loadConfig } from './config.js';
+import { getInputFromStdin, getInputFromPathOrUrl } from './input.js';
 
 loadConfig();
 
-const execute = async (command, options) => {
+const execute = async (command: string, options: InputOptions): Promise<string> => {
   const inputData = options.input
     ? await getInputFromPathOrUrl(options.input)
     : await getInputFromStdin();
-  return applyTemplate(
-    command,
-    inputData,
-    options,
-  );
+  return applyTemplate(command, inputData, options);
 };
 
 program
   .name('gptools')
   .description('CLI to interact with OpenAI');
 
-fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) => {
+fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR!)).forEach((file) => {
   const commandName = path.basename(file, '.md');
   program
     .command(commandName)
@@ -32,7 +29,7 @@ fs.readdirSync(expandHomeDir(process.env.GPTOOLS_PROMPTS_DIR)).forEach((file) =>
     .option('--engine <value>', 'AI engine to use if not specified by the file (ollama or openai)')
     .option('--model <value>', 'AI engine to use if not specified by the file (i.e. gpt-3.5-turbo)')
     .action(
-      (options) => execute(commandName, options)
+      (options: InputOptions) => execute(commandName, options)
         .then((result) => {
           console.log(result);
           process.exit(0);

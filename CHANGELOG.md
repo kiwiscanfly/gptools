@@ -4,10 +4,14 @@
 
 ### Features
 
-- Deploy command
-- Tool use
+- Deploy to server
 
 ## Upcoming (v1.1.0)
+
+## Features
+
+- Variable support in the template, with a command/tool that you can pipe JSON into and allow it to be used as variables in the template
+- Ability to call a web service and then pipe the result into the variable command or into the template
 
 ### Maintenance
 
@@ -15,7 +19,7 @@
 - Support additional settings
 - Support additional URLs
 
-## Pending (v1.0.0)
+## v1.0.0
 
 ### Features
 
